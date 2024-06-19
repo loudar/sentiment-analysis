@@ -25,11 +25,19 @@ for (const message of messages) {
     const eta = new Date(startTime + diff * (messages.length - i));
     const timeToEta = eta - new Date();
     const timeToEtaString = new Date(timeToEta).toISOString().substring(11, 19);
-    CLI.rewrite(`Analyzing message ${i}/${messages.length} | L${message.text.length} | ETA ${timeToEtaString} | TPM ${diff.toFixed(2)}ms`);
+    CLI.rewrite(`Analyzing message ${i}/${messages.length} | L${message.text.length.toString().padEnd(5, " ")} | ETA ${timeToEtaString} | TPM ${diff.toFixed(2)}ms`);
     const result = await analyzer.sentiment(message.text, language);
+    if (diff < 1000 / 60) {
+        await new Promise(resolve => setTimeout(resolve, 1000 / 60 - diff));
+    }
     message.score = result.score;
     message.confidence = result.confidence;
     message.weightedScore = result.weightedScore;
+
+    if (i % 100 === 0) {
+        CLI.rewrite(`Writing to file...`);
+        fs.writeFileSync(path.join(process.env.DISCORD_DATA_PATH, "messages.json"), JSON.stringify(messages, null, 4));
+    }
 }
 CLI.debug("");
 CLI.success(`Analyzed ${i} messages`);
