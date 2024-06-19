@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "bun main.mjs",
+    "discord": "bun discord.mjs",
     "graph": "node graphing.mjs"
   },
   "author": "",

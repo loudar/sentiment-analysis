@@ -26,7 +26,8 @@ export class TextAnalyzer {
         const first = result[0];
         return {
             score: TextAnalyzer.sentimentValueMap[first.sentiment],
-            confidence: first.confidenceScores[first.sentiment]
+            confidence: first.confidenceScores[first.sentiment],
+            weightedScore: TextAnalyzer.sentimentValueMap[first.sentiment] * first.confidenceScores[first.sentiment]
         };
     }
 

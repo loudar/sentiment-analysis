@@ -18,7 +18,6 @@ for (let i = 0; i < result.length; i++) {
     const { score, confidence } = result[i];
     sentences[i].score = score;
     sentences[i].confidence = confidence;
-    sentences[i].weightedScore = score * confidence;
 }
 
 const firstDateString = sentences[0].date;
