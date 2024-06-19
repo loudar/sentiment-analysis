@@ -19,10 +19,13 @@ for (const message of messages) {
     if (message.score && message.confidence && message.weightedScore) {
         continue;
     }
+
     i++;
     const diff = (new Date().getTime() - startTime) / i;
     const eta = new Date(startTime + diff * (messages.length - i));
-    CLI.rewrite(`Analyzing message ${i}/${messages.length} | L${message.text.length} | ETA ${eta.toISOString()} | TPM ${Math.round(60000 / diff)}`);
+    const timeToEta = eta - new Date();
+    const timeToEtaString = new Date(timeToEta).toISOString().substring(11, 19);
+    CLI.rewrite(`Analyzing message ${i}/${messages.length} | L${message.text.length} | ETA ${timeToEtaString} | TPM ${diff.toFixed(2)}ms`);
     const result = await analyzer.sentiment(message.text, language);
     message.score = result.score;
     message.confidence = result.confidence;
