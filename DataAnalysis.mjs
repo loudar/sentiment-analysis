@@ -3,10 +3,13 @@ import fs from 'fs';
 import {CLI} from "./CLI.mjs";
 
 export class DataAnalysis {
-    static runningAverage(data, index, previousCount) {
+    static runningAverageFromFunction(data, index, previousCount, func = i => i) {
         let sum = 0;
         for (let i = index - previousCount + 1; i <= index; i++) {
-            sum += data[i];
+            if (i < 0 || !data[i]) {
+                continue;
+            }
+            sum += func(data[i]);
         }
         return sum / previousCount;
     }
@@ -109,7 +112,7 @@ export class DataAnalysis {
     static averageFromFunction(data, func = i => i) {
         const averages = [];
         for (const objKey of Object.keys(data)) {
-            const values = data[objKey].map(func);
+            const values = data[objKey].map(func).filter(i => !isNaN(i));
             const average = values.reduce((a, b) => a + b, 0) / values.length;
             averages.push({
                 key: objKey,
@@ -117,5 +120,20 @@ export class DataAnalysis {
             });
         }
         return averages;
+    }
+
+    static groupByInterval(data, key, interval) {
+        const grouped = {};
+        for (const item of data) {
+            const rounded = (Math.round(item[key] / interval) * interval).toFixed(2);
+            if (!grouped[rounded]) {
+                grouped[rounded] = [];
+            }
+            grouped[rounded].push({
+                ...item,
+                key: rounded
+            });
+        }
+        return grouped;
     }
 }
