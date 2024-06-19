@@ -4,16 +4,20 @@
   "main": "main.mjs",
   "type": "module",
   "scripts": {
-    "start": "bun main.mjs"
+    "start": "bun main.mjs",
+    "graph": "node graphing.mjs"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
     "@azure/ai-text-analytics": "^5.1.0",
+    "canvas": "^2.11.2",
+    "chartjs-node-canvas": "^4.1.6",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
+    "@types/node": "^20.14.5",
     "bun": "^1.1.14"
   }
 }
