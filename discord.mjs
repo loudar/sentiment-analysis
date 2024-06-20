@@ -13,32 +13,61 @@ const language = "en";
 
 console.log(`Using endpoint ${process.env.TEXT_ANALYTICS_ENDPOINT}`);
 const analyzer = new TextAnalyzer();
-let i = 0;
+let i = 0, analyzed = 0;
 const startTime = new Date().getTime();
 for (const message of messages) {
-    if (message.score && message.confidence && message.weightedScore) {
-        continue;
-    }
-
     i++;
-    const diff = (new Date().getTime() - startTime) / i;
-    const eta = new Date(startTime + diff * (messages.length - i));
-    const timeToEta = eta - new Date();
-    const timeToEtaString = new Date(timeToEta).toISOString().substring(11, 19);
-    CLI.rewrite(`Analyzing message ${i}/${messages.length} | L${message.text.length.toString().padEnd(5, " ")} | ETA ${timeToEtaString} | TPM ${diff.toFixed(2)}ms`);
-    const result = await analyzer.sentiment(message.text, language);
-    if (diff < 1000 / 60) {
-        await new Promise(resolve => setTimeout(resolve, 1000 / 60 - diff));
+    let diff = (new Date().getTime() - startTime) / analyzed;
+    if (isNaN(diff)) {
+        diff = 0;
+    } else if (diff === Infinity) {
+        diff = 100; // Estimate
     }
-    message.score = result.score;
-    message.confidence = result.confidence;
-    message.weightedScore = result.weightedScore;
+    const eta = new Date(new Date().getTime() + diff * (messages.length - i));
+    const timeToEta = eta.getTime() - new Date().getTime() - new Date().getTimezoneOffset() * 60 * 1000;
+    const baseDate = new Date(1990, 0, 1, 23, 0, 0).getTime();
+    const timeToEtaString = new Date(baseDate + timeToEta).toISOString().substring(11, 19);
+    const progress = i / messages.length;
+    let changed = false;
+    if (i % 1000 === 0) {
+        CLI.rewrite(`Checking message ${i}/${messages.length} | L${message.text.length.toString().padEnd(5, " ")} | ETA ${timeToEtaString} | TPM ${diff.toFixed(2)}ms`);
+    }
 
-    if (i % 100 === 0) {
-        CLI.rewrite(`Writing to file...`);
-        fs.writeFileSync(path.join(process.env.DISCORD_DATA_PATH, "messages.json"), JSON.stringify(messages, null, 4));
+    if (message.language === undefined) {
+        const barLength = 20;
+        const bars = "=".repeat(Math.round(progress * barLength));
+        const spaces = " ".repeat(barLength - Math.round(progress * barLength));
+        CLI.rewriteLines([`Analyzing language for message ${i}/${messages.length} | L${message.text.length.toString().padEnd(5, " ")} | ETA ${timeToEtaString} | TPM ${diff.toFixed(2)}ms`,
+            ` [${bars}${spaces}]`]);
+        const result = await analyzer.language(message.text);
+        message.language = result.language;
+        changed = true;
+    }
+
+    if (!message.score || message.confidence || message.weightedScore) {
+        /*
+        CLI.rewrite(`Analyzing sentiment for message ${i}/${messages.length} | L${message.text.length.toString().padEnd(5, " ")} | ETA ${timeToEtaString} | TPM ${diff.toFixed(2)}ms`);
+        const result = await analyzer.sentiment(message.text, message.language.iso6391Name);
+        message.score = result.score;
+        message.confidence = result.confidence;
+        message.weightedScore = result.weightedScore;
+        */
+    }
+
+    if (changed) {
+        analyzed++;
+
+        if (i % 100 === 0) {
+            CLI.rewrite(`Writing to file...`);
+            fs.writeFileSync(path.join(process.env.DISCORD_DATA_PATH, "messages.json"), JSON.stringify(messages, null, 4));
+        }
+
+        if (diff < 1000 / 60) {
+            await new Promise(resolve => setTimeout(resolve, 1000 / 60 - diff));
+        }
     }
 }
+
 CLI.debug("");
 CLI.success(`Analyzed ${i} messages`);
 const tempFile = path.join(process.env.DISCORD_DATA_PATH, "messages.json");

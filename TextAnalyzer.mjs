@@ -37,4 +37,26 @@ export class TextAnalyzer {
         neutral: 0,
         mixed: 0
     };
+
+    async language(input) {
+        if (input.constructor === Array) {
+            let output = [];
+            for (const text of input) {
+                output.push(await this.language(text));
+            }
+            return output;
+        }
+
+        input = input.replace(/\s+/g, ' ').trim();
+        if (input.length === 0) {
+            return {
+                language: null
+            }
+        }
+        const result = await this.client.detectLanguage([input]);
+        const first = result[0];
+        return {
+            language: first.primaryLanguage
+        };
+    }
 }

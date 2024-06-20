@@ -37,6 +37,8 @@ const mostNegative = json.sort((a, b) => a.weightedScore - b.weightedScore).slic
 
 const countPositive = json.filter(i => i.weightedScore > 0).length;
 const countNegative = json.filter(i => i.weightedScore < 0).length;
+const notZeroCount = json.filter(i => i.weightedScore !== 0).length;
+console.log(`Count not zero: ${notZeroCount} | ${(notZeroCount / json.length * 100).toFixed(2)}%`);
 const percentagePositive = countPositive / json.length * 100;
 const percentageNegative = countNegative / json.length * 100;
 console.log(`Count positive: ${countPositive} | ${percentagePositive.toFixed(2)}%`);

@@ -56,4 +56,12 @@ export class CLI {
     static object(obj) {
         CLI.debug(JSON.stringify(obj, null, 4));
     }
+
+    static rewriteLines(strings) {
+        process.stdout.clearLine();
+        process.stdout.cursorTo(0);
+        for (const string of strings) {
+            process.stdout.write(string);
+        }
+    }
 }
