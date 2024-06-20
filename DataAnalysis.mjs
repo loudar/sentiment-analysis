@@ -43,14 +43,19 @@ export class DataAnalysis {
         fs.writeFileSync(`${graphName}.png`, buffer);
     }
 
-    static renderAndSaveGraph(graphData, graphName, dateColumnLabels, openAfterSave = false, width = 1920, height = 1080) {
+    static renderAndSaveGraph(graphData, graphName, dataName, dateColumnLabels, type = "line", openAfterSave = false, width = 1920, height = 1080) {
+        /**
+         *
+         * @type {ChartConfiguration}
+         */
         const chartConfig = {
-            type: 'line',
+            type: type,
             data: {
                 labels: dateColumnLabels,
                 datasets: [
                     {
                         data: graphData,
+                        label: dataName ?? graphName,
                     },
                 ],
             },
@@ -72,6 +77,47 @@ export class DataAnalysis {
             .catch(error => console.error(error));
     }
 
+    static renderMultiLineChart(data, dateColumn, targetFolder, excludedColumns = [], graphName = null, width = 1920, height = 1080) {
+        const colors = [
+            'rgb(255, 99, 132)',
+            'rgb(54, 162, 235)',
+            'rgb(255, 206, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(153, 102, 255)',
+            'rgb(255, 159, 64)',
+        ];
+
+        const chartConfig = {
+            type: 'line',
+            data: {
+                labels: data[Object.keys(data)[0]].labels,
+                datasets: Object.keys(data).map(key => {
+                    const index = Object.keys(data).indexOf(key);
+                    return {
+                        data: data[key].data,
+                        label: data[key].label,
+                        borderColor: colors[index],
+                        backgroundColor: colors[index],
+                        fill: false,
+                    };
+                }),
+            },
+            options: {
+                pointRadius: 0,
+            },
+        };
+
+        const canvasRenderService = new ChartJSNodeCanvas({
+            width, height
+        });
+
+        canvasRenderService.renderToBuffer(chartConfig)
+            .then(buffer => {
+                fs.writeFileSync(`${targetFolder}/${graphName}.png`, buffer);
+            })
+            .catch(error => console.error(error));
+    }
+
     static renderCsvColumnsAsImages(data, dateColumn, targetFolder, excludedColumns = [], graphName = null) {
         const keys = Object.keys(data[0]);
         const dateColumnLabels = data.map(d => d[dateColumn]);
@@ -82,7 +128,7 @@ export class DataAnalysis {
             const column = data.map(d => d[key]);
             const imageName = graphName ?? `${key}_overtime`;
             CLI.debug(`Rendering ${imageName}...`);
-            DataAnalysis.renderAndSaveGraph(column, `${targetFolder}/${imageName}`, dateColumnLabels, false);
+            DataAnalysis.renderAndSaveGraph(column, `${targetFolder}/${imageName}`, imageName, dateColumnLabels, "line", false);
         }
     }
 
@@ -111,6 +157,30 @@ export class DataAnalysis {
                 ...item,
                 key
             });
+        }
+        // fill missing keys
+        if (resolution === "day") {
+            const firstDate = new Date(json.map(i => i.date).sort((a, b) => a - b)[0]);
+            const lastDate = new Date(json.map(i => i.date).sort((a, b) => b - a)[0]);
+            for (let i = firstDate.getTime(); i <= lastDate.getTime(); i += 24 * 60 * 60 * 1000) {
+                const date = new Date(i);
+                const key = DataAnalysis.getKeyFromDateWithResolution(date, resolution);
+                if (!grouped[key]) {
+                    grouped[key] = [];
+                }
+            }
+        } else if (resolution === "month") {
+            const firstDate = new Date(json.map(i => i.date).sort((a, b) => a - b)[0]);
+            const lastDate = new Date(json.map(i => i.date).sort((a, b) => b - a)[0]);
+            for (let i = firstDate.getFullYear(); i <= lastDate.getFullYear(); i++) {
+                for (let j = 0; j < 12; j++) {
+                    const date = new Date(i, j, 1);
+                    const key = DataAnalysis.getKeyFromDateWithResolution(date, resolution);
+                    if (!grouped[key]) {
+                        grouped[key] = [];
+                    }
+                }
+            }
         }
         return grouped;
     }

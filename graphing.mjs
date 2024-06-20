@@ -95,6 +95,29 @@ async function graphSentiments(json) {
     await DataAnalysis.renderPieChart(data, labels, "results/sentiments", 1920, 1080);
 }
 
+function graphWordUsageOverTime() {
+    const data = fs.readFileSync("allWords.json", "utf8");
+    const json = JSON.parse(data);
+    const topCount = 5;
+    const topWords = json.slice(0, topCount).sort((a, b) => b.count - a.count);
+    let chartData = {};
+    for (let i = 0; i < topCount; i++) {
+        const word = topWords[i];
+        const grouped = DataAnalysis.groupByDate(word.dates, "year");
+        let counts = DataAnalysis.countPerKey(grouped);
+        counts = counts.sort((a, b) => new Date(a.key) - new Date(b.key));
+        const data = counts.map(c => c.count);
+        const labels = counts.map(c => c.key);
+        chartData[i] = {
+            label: word.text,
+            labels,
+            data
+        };
+        CLI.debug(`Rendering ${word.text}...`);
+    }
+    DataAnalysis.renderMultiLineChart(chartData, "key", "results", [], "wordUsage");
+}
+
 graphCount(json);
 graphAverageLength(json);
 graphAverageSentiment(json);
@@ -102,3 +125,4 @@ await graphLanguages(json);
 // graphConfidence(json);
 graphRollingAverage(json);
 await graphSentiments(json);
+graphWordUsageOverTime();
