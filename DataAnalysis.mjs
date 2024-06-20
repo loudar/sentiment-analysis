@@ -136,4 +136,17 @@ export class DataAnalysis {
         }
         return grouped;
     }
+
+    static rollingValue(data, func = i => i, modFunc = (a, b) => a + b) {
+        const values = [];
+        for (let i = 0; i < data.length; i++) {
+            const window = data.slice(i, i + 1);
+            const value = window.reduce((a, b) => modFunc(a, func(b)), 0);
+            values.push({
+                ...window[0],
+                value
+            });
+        }
+        return values;
+    }
 }

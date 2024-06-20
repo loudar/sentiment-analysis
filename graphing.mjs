@@ -45,7 +45,25 @@ function graphConfidence(json) {
     DataAnalysis.renderCsvColumnsAsImages(counts, "key", "results", [], "confidence");
 }
 
+function graphRollingAverage(json) {
+    json = json.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const rolled = DataAnalysis.rollingValue(json, i => i.weightedScore, (a, b) => a + b);
+    const grouped = DataAnalysis.groupByDate(rolled, "month");
+    let rolling = [];
+    for (const key of Object.keys(grouped)) {
+        const entries = grouped[key];
+        const modWithinDay = entries.reduce((a, b) => a + b.value, 0);
+        rolling.push({
+            key,
+            modWithinDay
+        });
+    }
+    rolling = rolling.sort((a, b) => new Date(a.key) - new Date(b.key));
+    DataAnalysis.renderCsvColumnsAsImages(rolling, "key", "results", [], "rollingAverage");
+}
+
 graphCount(json);
 graphAverageLength(json);
 graphAverageSentiment(json);
 graphConfidence(json);
+graphRollingAverage(json);

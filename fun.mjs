@@ -24,7 +24,7 @@ const mostPositive = json.sort((a, b) => b.weightedScore - a.weightedScore).slic
         date: i.date,
     };
 });
-fs.writeFileSync("mostPositive.json", JSON.stringify(mostPositive, null, 4));
+//fs.writeFileSync("mostPositive.json", JSON.stringify(mostPositive, null, 4));
 
 const mostNegativeCount = 10;
 const mostNegative = json.sort((a, b) => a.weightedScore - b.weightedScore).slice(0, mostNegativeCount).map(i => {
@@ -33,4 +33,11 @@ const mostNegative = json.sort((a, b) => a.weightedScore - b.weightedScore).slic
         date: i.date,
     };
 });
-fs.writeFileSync("mostNegative.json", JSON.stringify(mostNegative, null, 4));
+//fs.writeFileSync("mostNegative.json", JSON.stringify(mostNegative, null, 4));
+
+const countPositive = json.filter(i => i.weightedScore > 0).length;
+const countNegative = json.filter(i => i.weightedScore < 0).length;
+const percentagePositive = countPositive / json.length * 100;
+const percentageNegative = countNegative / json.length * 100;
+console.log(`Count positive: ${countPositive} | ${percentagePositive.toFixed(2)}%`);
+console.log(`Count negative: ${countNegative} | ${percentageNegative.toFixed(2)}%`);
