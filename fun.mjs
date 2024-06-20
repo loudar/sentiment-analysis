@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import {CLI} from "./CLI.mjs";
 
 dotenv.config();
 
@@ -43,3 +44,19 @@ const percentagePositive = countPositive / json.length * 100;
 const percentageNegative = countNegative / json.length * 100;
 console.log(`Count positive: ${countPositive} | ${percentagePositive.toFixed(2)}%`);
 console.log(`Count negative: ${countNegative} | ${percentageNegative.toFixed(2)}%`);
+
+const messagesPerLanguage = json.reduce((acc, i) => {
+    const language = i.language.iso6391Name;
+    if (!acc[language]) {
+        acc[language] = [];
+    }
+    acc[language].push(i);
+    return acc;
+}, {});
+
+for (const language in messagesPerLanguage) {
+    const messages = messagesPerLanguage[language];
+    const count = messages.length;
+    const percentage = count / json.length * 100;
+    console.log(`${language}: ${count} | ${percentage.toFixed(2)}%`);
+}

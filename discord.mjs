@@ -44,14 +44,16 @@ for (const message of messages) {
         changed = true;
     }
 
-    if (!message.score || message.confidence || message.weightedScore) {
-        /*
+    //if (!message.score || message.confidence || message.weightedScore) {
+    if (message.language.iso6391Name && message.language.iso6391Name !== "en" && message.language.iso6391Name !== "(Unknown)") {
         CLI.rewrite(`Analyzing sentiment for message ${i}/${messages.length} | L${message.text.length.toString().padEnd(5, " ")} | ETA ${timeToEtaString} | TPM ${diff.toFixed(2)}ms`);
         const result = await analyzer.sentiment(message.text, message.language.iso6391Name);
-        message.score = result.score;
-        message.confidence = result.confidence;
-        message.weightedScore = result.weightedScore;
-        */
+        if (result) {
+            message.score = result.score;
+            message.confidence = result.confidence;
+            message.weightedScore = result.weightedScore;
+            changed = true;
+        }
     }
 
     if (changed) {

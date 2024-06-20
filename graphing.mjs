@@ -48,22 +48,57 @@ function graphConfidence(json) {
 function graphRollingAverage(json) {
     json = json.sort((a, b) => new Date(a.date) - new Date(b.date));
     const rolled = DataAnalysis.rollingValue(json, i => i.weightedScore, (a, b) => a + b);
-    const grouped = DataAnalysis.groupByDate(rolled, "month");
-    let rolling = [];
-    for (const key of Object.keys(grouped)) {
-        const entries = grouped[key];
-        const modWithinDay = entries.reduce((a, b) => a + b.value, 0);
-        rolling.push({
-            key,
-            modWithinDay
-        });
+    const grouped = DataAnalysis.groupByDate(rolled, "day");
+    let averages = DataAnalysis.averageFromFunction(grouped, i => i.value);
+    averages = averages.sort((a, b) => new Date(a.key) - new Date(b.key));
+    DataAnalysis.renderCsvColumnsAsImages(averages, "key", "results", [], "rollingAverage");
+}
+
+async function graphLanguages(json) {
+    const languages = DataAnalysis.groupByFunction(json, i => i.language.iso6391Name);
+    let counts = DataAnalysis.countPerKey(languages);
+    let out = [];
+    const countsSum = counts.reduce((a, b) => a + b.count, 0);
+    for (const c of counts) {
+        if (c.count > 0.01 * countsSum) {
+            out.push(c);
+        } else {
+            if (!out.find(o => o.key === "Other")) {
+                out.push({
+                    key: "Other",
+                    count: 0
+                });
+            }
+            out.find(o => o.key === "Other").count += c.count;
+        }
     }
-    rolling = rolling.sort((a, b) => new Date(a.key) - new Date(b.key));
-    DataAnalysis.renderCsvColumnsAsImages(rolling, "key", "results", [], "rollingAverage");
+    out = out.sort((a, b) => a.count - b.count);
+    const data = out.map(c => c.count);
+    const labels = out.map(c => c.key);
+    await DataAnalysis.renderPieChart(data, labels, "results/languages", 1920, 1080);
+}
+
+async function graphSentiments(json) {
+    const sentiments = DataAnalysis.groupByFunction(json, i => {
+        if (i.weightedScore > 0) {
+            return "positive";
+        } else if (i.weightedScore < 0) {
+            return "negative";
+        } else {
+            return "neutral";
+        }
+    });
+    let counts = DataAnalysis.countPerKey(sentiments);
+    counts = counts.sort((a, b) => a.count - b.count);
+    const data = counts.map(c => c.count);
+    const labels = counts.map(c => c.key);
+    await DataAnalysis.renderPieChart(data, labels, "results/sentiments", 1920, 1080);
 }
 
 graphCount(json);
 graphAverageLength(json);
 graphAverageSentiment(json);
-graphConfidence(json);
+await graphLanguages(json);
+// graphConfidence(json);
 graphRollingAverage(json);
+await graphSentiments(json);

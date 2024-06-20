@@ -14,6 +14,35 @@ export class DataAnalysis {
         return sum / previousCount;
     }
 
+    static async renderPieChart(graphData, labels, graphName, width = 1920, height = 1080) {
+        const colors = [
+            'rgb(255, 99, 132)',
+            'rgb(54, 162, 235)',
+            'rgb(255, 206, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(153, 102, 255)',
+            'rgb(255, 159, 64)',
+        ];
+
+        const chartConfig = {
+            type: 'pie',
+            data: {
+                labels,
+                datasets: [{
+                    data: graphData,
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1
+                }],
+            },
+        };
+        const canvasRenderService = new ChartJSNodeCanvas({
+            width, height
+        });
+        const buffer = await canvasRenderService.renderToBuffer(chartConfig);
+        fs.writeFileSync(`${graphName}.png`, buffer);
+    }
+
     static renderAndSaveGraph(graphData, graphName, dateColumnLabels, openAfterSave = false, width = 1920, height = 1080) {
         const chartConfig = {
             type: 'line',
@@ -109,6 +138,17 @@ export class DataAnalysis {
         return counts;
     }
 
+    static countPerFunction(json, func = i => i) {
+        const counts = [];
+        for (const objKey of Object.keys(json)) {
+            counts.push({
+                key: objKey,
+                count: json[objKey].length
+            });
+        }
+        return counts;
+    }
+
     static averageFromFunction(data, func = i => i) {
         const averages = [];
         for (const objKey of Object.keys(data)) {
@@ -137,13 +177,27 @@ export class DataAnalysis {
         return grouped;
     }
 
+    static groupByFunction(data, keyFunc = i => i) {
+        const grouped = {};
+        for (const item of data) {
+            const key = keyFunc(item);
+            if (!grouped[key]) {
+                grouped[key] = [];
+            }
+            grouped[key].push({
+                ...item,
+                key
+            });
+        }
+        return grouped;
+    }
+
     static rollingValue(data, func = i => i, modFunc = (a, b) => a + b) {
-        const values = [];
+        let values = [], value = 0;
         for (let i = 0; i < data.length; i++) {
-            const window = data.slice(i, i + 1);
-            const value = window.reduce((a, b) => modFunc(a, func(b)), 0);
+            value = modFunc(value, func(data[i]));
             values.push({
-                ...window[0],
+                ...data[i],
                 value
             });
         }
